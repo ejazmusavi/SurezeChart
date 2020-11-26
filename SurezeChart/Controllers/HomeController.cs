@@ -20,6 +20,7 @@ namespace SurezeChart.Controllers
 
         public IActionResult Index()
         {
+
             return View();
         }
 

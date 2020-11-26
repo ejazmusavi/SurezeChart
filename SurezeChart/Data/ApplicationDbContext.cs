@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SurezeChart.Models;
 
 namespace SurezeChart.Data
 {
@@ -12,5 +13,7 @@ namespace SurezeChart.Data
             : base(options)
         {
         }
+
+        DbSet<Strip> Strips { get; set;}
     }
 }

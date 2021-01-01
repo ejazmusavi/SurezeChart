@@ -14,6 +14,6 @@ namespace SurezeChart.Data
         {
         }
 
-        DbSet<Strip> Strips { get; set;}
+       public DbSet<Strip> Strips { get; set;}
     }
 }

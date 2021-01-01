@@ -8,12 +8,11 @@ namespace SurezeChart.Models
     public class Strip
     {
         public decimal Id { get; set; }
-        public decimal CTGID { get; set; }
         public decimal PATIENTID { get; set; }
         public decimal SIGNAL { get; set; }
-        public decimal HRA { get; set; }
-        public decimal HRB { get; set; }
-        public decimal TOCO { get; set; }
+        public double HRA { get; set; }
+        public double HRB { get; set; }
+        public double TOCO { get; set; }
         public DateTime CreateDate { get; set; }
     }
 }

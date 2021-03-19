@@ -11,6 +11,7 @@ using SurezeChart.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SurezeChart.Hubs;
 
 namespace SurezeChart
 {
@@ -36,6 +37,7 @@ namespace SurezeChart
                 options.IdleTimeout = TimeSpan.FromMinutes(30);
             });
             services.AddControllersWithViews();
+            services.AddSignalR();
             services.AddRazorPages();
         }
 
@@ -66,8 +68,8 @@ namespace SurezeChart
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=RealTimeChart}/{action=Index}/{id?}");
-                endpoints.MapRazorPages();
+                           pattern: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapHub<ChartHub>("/ChartHub");
             });
         }
     }

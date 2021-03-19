@@ -7,13 +7,13 @@ using SurezeChart.Models;
 
 namespace SurezeChart.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-        }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-       public DbSet<Strip> Strips { get; set;}
+        public DbSet<StripData> StripData { get; set; }
+        public DbSet<StripNotes> StripNotes { get; set; }
+
     }
+
 }

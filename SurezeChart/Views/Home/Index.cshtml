@@ -1,159 +1,632 @@
-﻿@{ Layout = null; }
+﻿<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="~/microsoft/signalr/dist/webworker/signalr.min.js"></script>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Zooming and Scrolling with Viewport Control</title>
-    <script src="~/Scripts/cdjcv.js"></script>
-    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
-    <script src="~/Scripts/bootstrap.min.js"></script>
-   
-</head>
-<body style="margin:0px;">
-    <script type="text/javascript">
+<style>
+    /* FULL SCREEN */
 
-//
-// Execute the following initialization code after the web page is loaded
-//
-JsChartViewer.addEventListener(window, 'load', function() {
-    // Update the chart when the view port has changed (eg. when the user zooms in using the mouse)
-    var viewer = JsChartViewer.get('@ViewBag.Viewer.ID');
-    viewer.attachHandler("ViewPortChanged", viewer.partialUpdate);
-
-    // Initialize the navigation pad
-    JsViewPortControl.get('@ViewBag.ViewPortControl.ID').setViewer(viewer);
-
-    // Draw track cursor when mouse is moving over plotarea or if the chart updates
-    viewer.attachHandler(["MouseMovePlotArea", "TouchStartPlotArea", "TouchMovePlotArea", "PostUpdate",
-        "Now", "ChartMove"], function(e) {
-        this.preventDefault(e);   // Prevent the browser from using touch events for other actions
-        trackLineLegend(viewer, viewer.getPlotAreaMouseX());
-    });
-});
-
-//
-// Draw track line with legend
-//
-function trackLineLegend(viewer, mouseX)
-{
-    // Remove all previously drawn tracking object
-    viewer.hideObj("all");
-
-    // The chart and its plot area
-    var c = viewer.getChart();
-    var plotArea = c.getPlotArea();
-
-    // Get the data x-value that is nearest to the mouse, and find its pixel coordinate.
-    var xValue = c.getNearestXValue(mouseX);
-    var xCoor = c.getXCoor(xValue);
-    if (xCoor == null)
-        return;
-
-    // Draw a vertical track line at the x-position
-    viewer.drawVLine("trackLine", xCoor, plotArea.getTopY(), plotArea.getBottomY(), "black 1px dotted");
-
-    // Array to hold the legend entries
-    var legendEntries = [];
-
-    // Iterate through all layers to build the legend array
-    for (var i = 0; i < c.getLayerCount(); ++i)
-    {
-        var layer = c.getLayerByZ(i);
-
-        // The data array index of the x-value
-        var xIndex = layer.getXIndexOf(xValue);
-
-        // Iterate through all the data sets in the layer
-        for (var j = 0; j < layer.getDataSetCount(); ++j)
-        {
-            var dataSet = layer.getDataSetByZ(j);
-
-            // We are only interested in visible data sets with names, as they are required for legend entries.
-            var dataName = dataSet.getDataName();
-            var color = dataSet.getDataColor();
-            if ((!dataName) || (color == null))
-                continue;
-
-            // Build the legend entry, consist of a colored square box, the name and the data value.
-            var dataValue = dataSet.getValue(xIndex);
-            legendEntries.push("<nobr>" + viewer.htmlRect(10, 10, color) + " " + dataName + ": " +
-                ((dataValue == null) ? "N/A" : dataValue.toPrecision(4)) + viewer.htmlRect(20, 0) + "</nobr> ");
-
-            // Draw a track dot for data points within the plot area
-            var yCoor = c.getYCoor(dataSet.getPosition(xIndex), dataSet.getUseYAxis());
-            if ((yCoor != null) && (yCoor >= plotArea.getTopY()) && (yCoor <= plotArea.getBottomY()))
-            {
-                viewer.showTextBox("dataPoint" + i + "_" + j, xCoor, yCoor, JsChartViewer.Center,
-                    viewer.htmlRect(9, 9, color));
-            }
-        }
+    .chart:-webkit-full-screen {
+        width: 100%;
+        height: 100%;
     }
 
-    // Create the legend by joining the legend entries.
-    var legend = "<nobr>[" + c.xAxis().getFormattedLabel(xValue, "mm/dd/yyyy") + "]" + viewer.htmlRect(20, 0) +
-        "</nobr> " + legendEntries.reverse().join("");
+    .chart:-moz-full-screen {
+        width: 100%;
+        height: 100%;
+    }
 
-    // Display the legend on the top of the plot area
-    viewer.showTextBox("legend", plotArea.getLeftX(), plotArea.getTopY(), JsChartViewer.BottomLeft, legend,
-        "padding:0px 0px 3px 3px; font:bold 13px Arial; -webkit-text-size-adjust:100%;");
-}
+    .chart:-ms-fullscreen {
+        width: 100%;
+        height: 100%;
+    }
 
-//
-// This method is called when the user clicks on the Pointer, Zoom In or Zoom Out buttons
-//
-function setMouseMode(mode)
-{
-    var viewer = JsChartViewer.get('@ViewBag.Viewer.ID');
-    if (mode == viewer.getMouseUsage())
-        mode = JsChartViewer.Default;
+    .chart:fullscreen {
+        width: 100%;
+        height: 100%;
+    }
 
-    // Set the button color based on the selected mouse mode
-    document.getElementById("scrollButton").className = "chartButton" +
-        ((mode  == JsChartViewer.Scroll) ? " chartButtonPressed" : "");
-    document.getElementById("zoomInButton").className = "chartButton" +
-        ((mode  == JsChartViewer.ZoomIn) ? " chartButtonPressed" : "");
-    document.getElementById("zoomOutButton").className = "chartButton" +
-        ((mode  == JsChartViewer.ZoomOut) ? " chartButtonPressed" : "");
+    /* GENERAL */
 
-    // Set the mouse mode
-    viewer.setMouseUsage(mode);
-}
+    .chart {
+        float: left;
+        max-height: 800px;
+        height: 75vh;
+        position: relative;
+        width: 100%;
+    }
 
-//
-// This method is called when the user clicks on the buttons that selects the last NN days
-//
-function setTimeRange(duration)
-{
-    var viewer = JsChartViewer.get('@ViewBag.Viewer.ID');
+    .highcharts-draw-mode {
+        cursor: crosshair;
+    }
 
-    // Set the view port width to represent the required duration (as a ratio to the total x-range)
-    viewer.setViewPortWidth(Math.min(1,
-        duration / (viewer.getValueAtViewPort("x", 1) - viewer.getValueAtViewPort("x", 0))));
+    .left {
+        float: left;
+    }
 
-    // Set the view port left so that the view port is moved to show the latest data
-    viewer.setViewPortLeft(1 - viewer.getViewPortWidth());
+    .right,
+    .highcharts-stocktools-toolbar li.right {
+        float: right;
+    }
 
-    // Trigger a view port change event
-    viewer.raiseViewPortChangedEvent();
-}
+    /* GUI */
 
-    </script>
-    <form method="post" id="ZoomScrollTrack">
-        <table cellspacing="0" cellpadding="0" style="border:black 1px solid;margin-top:12px;margin-left:330px;">
-            <tr valign="top">
-                <td >
-                    <!-- ****** Here is the chart viewer ****** -->
-                    @Html.Raw(ViewBag.Viewer.RenderHTML())<br />
-                  
-                </td>               
-            </tr>
-            <tr>
-                <td style="margin-top:4px">
-                    <!-- ****** Here is the viewport control ****** -->
-                    @Html.Raw(ViewBag.ViewPortControl.RenderHTML())
-                </td>
-            </tr>
-        </table>
-    </form>
-</body>
-</html>
+    .highcharts-stocktools-toolbar {
+        margin: 0px 0px 0px 10px;
+        padding: 0px;
+        width: calc(100% - 63px);
+        margin-top: unset;
+    }
+
+        .highcharts-stocktools-toolbar li {
+            background-color: #f7f7f7;
+            background-repeat: no-repeat;
+            cursor: pointer;
+            float: left;
+            height: 40px;
+            list-style: none;
+            margin-right: 2px;
+            margin-bottom: 3px;
+            padding: 0px;
+            position: relative;
+            width: auto;
+        }
+
+            .highcharts-stocktools-toolbar li ul {
+                display: none;
+                left: 0px;
+                padding-left: 0px;
+                position: absolute;
+                z-index: 125;
+            }
+
+            .highcharts-stocktools-toolbar li:hover {
+                background-color: #e6ebf5;
+            }
+
+                .highcharts-stocktools-toolbar li:hover ul {
+                    display: block;
+                }
+
+            .highcharts-stocktools-toolbar li ul li {
+                margin-bottom: 0px;
+                width: 160px;
+            }
+
+            .highcharts-stocktools-toolbar li > span.highcharts-menu-item-btn {
+                background-repeat: no-repeat;
+                background-position: 50% 50%;
+                display: block;
+                float: left;
+                height: 100%;
+                width: 40px;
+            }
+
+            .highcharts-stocktools-toolbar li > .highcharts-menu-item-title {
+                color: #666;
+                line-height: 40px;
+                font-size: 0.876em;
+                padding: 0px 10px 0px 5px;
+            }
+
+    .highcharts-indicators > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/indicators.svg');
+    }
+
+    .highcharts-label-annotation > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/label.svg');
+    }
+
+    .highcharts-circle-annotation > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/circle.svg');
+    }
+
+    .highcharts-rectangle-annotation > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/rectangle.svg');
+    }
+
+    .highcharts-segment > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/segment.svg');
+    }
+
+    .highcharts-arrow-segment > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/arrow-segment.svg');
+    }
+
+    .highcharts-ray > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/ray.svg');
+    }
+
+    .highcharts-arrow-ray > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/arrow-ray.svg');
+    }
+
+    .highcharts-infinity-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/line.svg');
+    }
+
+    .highcharts-arrow-infinity-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/arrow-line.svg');
+    }
+
+    .highcharts-horizontal-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/horizontal-line.svg');
+    }
+
+    .highcharts-vertical-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-line.svg');
+    }
+
+    .highcharts-elliott3 > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/elliott-3.svg');
+    }
+
+    .highcharts-elliott5 > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/elliott-5.svg');
+    }
+
+    .highcharts-crooked3 > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/crooked-3.svg');
+    }
+
+    .highcharts-crooked5 > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/crooked-5.svg');
+    }
+
+    .highcharts-measure-xy > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/measure-xy.svg');
+    }
+
+    .highcharts-measure-x > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/measure-x.svg');
+    }
+
+    .highcharts-measure-y > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/measure-y.svg');
+    }
+
+    .highcharts-fibonacci > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/fibonacci.svg');
+    }
+
+    .highcharts-pitchfork > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/pitchfork.svg');
+    }
+
+    .highcharts-parallel-channel > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/parallel-channel.svg');
+    }
+
+    .highcharts-toggle-annotations > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/annotations-visible.svg');
+    }
+
+    .highcharts-vertical-counter > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-counter.svg');
+    }
+
+    .highcharts-vertical-label > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-label.svg');
+    }
+
+    .highcharts-vertical-arrow > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-arrow.svg');
+    }
+
+    .highcharts-vertical-double-arrow > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-double-arrow.svg');
+    }
+
+    .highcharts-flag-circlepin > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/flag-elipse.svg');
+    }
+
+    .highcharts-flag-diamondpin > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/flag-diamond.svg');
+    }
+
+    .highcharts-flag-squarepin > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/flag-trapeze.svg');
+    }
+
+    .highcharts-flag-simplepin > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/flag-basic.svg');
+    }
+
+    .highcharts-zoom-xy > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/zoom-xy.svg');
+    }
+
+    .highcharts-zoom-x > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/zoom-x.svg');
+    }
+
+    .highcharts-zoom-y > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/zoom-y.svg');
+    }
+
+    .highcharts-full-screen > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/fullscreen.svg');
+    }
+
+    .highcharts-series-type-ohlc > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/series-ohlc.svg');
+    }
+
+    .highcharts-series-type-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/series-line.svg');
+    }
+
+    .highcharts-series-type-candlestick > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/series-candlestick.svg');
+    }
+
+    .highcharts-current-price-indicator > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/current-price-show.svg');
+    }
+
+    .highcharts-save-chart > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/save-chart.svg');
+    }
+
+    li.highcharts-active {
+        background-color: #e6ebf5;
+    }
+
+    /* Popup */
+
+    .chart-wrapper {
+        float: left;
+        position: relative;
+        width: 100%;
+        background: white;
+        padding-top: 10px;
+    }
+
+    /* Responsive design */
+
+    @@media screen and (max-width: 1024px) {
+        .highcharts-stocktools-toolbar li > .highcharts-menu-item-title {
+            display: none;
+        }
+
+        .highcharts-stocktools-toolbar li ul li {
+            width: auto;
+        }
+    }
+</style>
+
+<style>
+
+
+    #container {
+        min-height: 600px;
+        align-items: center;
+        max-width: 700px;
+    }
+</style>
+
+
+<!--------------------------------------------Buttons Start---------------------------------------------------------------->
+<link rel="stylesheet" type="text/css" href="https://code.highcharts.com/css/annotations/popup.css">
+
+
+<script src="https://code.highcharts.com/stock/highstock.js"></script>
+<script src="https://code.highcharts.com/stock/modules/data.js"></script>
+
+<script src="https://code.highcharts.com/stock/modules/drag-panes.js"></script>
+
+<script src="https://code.highcharts.com/stock/indicators/indicators.js"></script>
+<script src="https://code.highcharts.com/stock/indicators/bollinger-bands.js"></script>
+<script src="https://code.highcharts.com/stock/indicators/ema.js"></script>
+
+<script src="https://code.highcharts.com/stock/modules/annotations-advanced.js"></script>
+
+<script src="https://code.highcharts.com/stock/modules/full-screen.js"></script>
+<script src="https://code.highcharts.com/stock/modules/price-indicator.js"></script>
+<script src="https://code.highcharts.com/stock/modules/stock-tools.js"></script>
+<script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/stock/modules/export-data.js"></script>
+
+
+<div class="chart-wrapper">
+    <div class="highcharts-popup highcharts-popup-indicators">
+        <span class="highcharts-close-popup">×</span>
+
+        <button>Add</button>
+    </div>
+    <div class="highcharts-popup highcharts-popup-annotations">
+        <span class="highcharts-close-popup">×</span>
+        <div class="highcharts-popup-wrapper">
+            <label for="stroke">Color</label>
+            <input type="text" name="stroke">
+            <label for="stroke-width">Width</label>
+            <input type="text" name="stroke-width">
+        </div>
+        <button>Save</button>
+    </div>
+    <div class="highcharts-stocktools-wrapper highcharts-bindings-container highcharts-bindings-wrapper">
+        <div class="highcharts-menu-wrapper">
+            <ul class="highcharts-stocktools-toolbar stocktools-toolbar">
+                <li class="highcharts-full-screen right" title="Fullscreen">
+                    <span class="highcharts-menu-item-btn"></span>
+                </li>
+                <li class="highcharts-zoom-x right" title="Zoom change">
+                    <span class="highcharts-menu-item-btn"></span>
+                    <span class="highcharts-submenu-item-arrow highcharts-arrow-right"></span>
+                    <ul class="highcharts-submenu-wrapper">
+                        <li class="highcharts-zoom-x" title="Zoom X">
+                            <span class="highcharts-menu-item-btn"></span>
+                            <span class="highcharts-menu-item-title">Zoom X</span>
+                        </li>
+                        <li class="highcharts-zoom-y" title="Zoom Y">
+                            <span class="highcharts-menu-item-btn"></span>
+                            <span class="highcharts-menu-item-title">Zoom Y</span>
+                        </li>
+                        <li class="highcharts-zoom-xy" title="Zooom XY">
+                            <span class="highcharts-menu-item-btn"></span>
+                            <span class="highcharts-menu-item-title">Zoom XY</span>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="container" class="chart" style="overflow: hidden;margin-left: 18%;align-items: center;"></div>
+</div>
+<!---------------------------------------------Buttons End----------------------------------------------------------------->
+
+
+
+
+
+<script>
+
+
+
+    var series;
+    var series1;
+    var series2;
+
+
+    var connection = new signalR.HubConnectionBuilder().withUrl("/ChartHub").build();
+    connection.start().then(function () {
+        connection.invoke("InitialData");
+    
+    }).catch(function (err) {
+        return console.error('signalR core connection error', err.toString());
+    });
+
+    connection.on('initialChartData',function(data){
+    console.log('initial data fetched ',data);
+    $.each(data,function(i,v,a){
+    console.log(v);
+        var x = new Date(v.date); // current time
+        series.addPoint([x, v.fhR1], false, false);
+        series1.addPoint([x, v.fhR2], false, false);
+        series2.addPoint([x, v.toco], false, false);
+    
+    });
+        main_chart.redraw();
+        setInterval(function () {
+            connection.invoke("GetData");
+        }, 1000);
+
+    });
+    connection.on('updatechart', function (data) {
+
+        console.log(series);
+        var x = new Date(data.date); // current time
+        series.addPoint([x, data.fhR1], false, false);
+        series1.addPoint([x, data.fhR2], false, false);
+        series2.addPoint([x, data.toco], false, false);
+        main_chart.redraw();
+    })
+
+
+    var main_chart = Highcharts.stockChart('container', {
+
+        chart: {
+            events: {
+                load: function () {
+                    //{
+                    //    fhr1=145,fhr2=143,toco=99, time='2021-12-12 10:12:03:2345'
+                    //}
+
+                    // set up the updating of the chart each second
+                    series = this.series[0];
+                    series1 = this.series[1];
+                    series2 = this.series[2];
+
+
+                }
+            },
+
+        },
+
+
+        time: {
+            useUTC: false
+        },
+
+        exporting:
+        {
+            accessibility:
+            {
+                enabled: true
+            },
+            allowHTML: false,
+
+            buttons:
+            {
+                contextButton:
+                {
+                    _titleKey: undefined,
+                    align: "right",
+                    buttonSpacing: 3,
+                    className: "highcharts - contextbutton",
+                    enabled: true,
+                    height: 22,
+                    menuClassName: "highcharts - contextmenu",
+                    menuItems: ["viewFullscreen", "printChart", "separator", "downloadPNG", "downloadJPEG", "downloadPDF", "downloadSVG"],
+                    onclick: undefined,
+                    symbol: "menu",
+                    symbolFill: "#666666",
+                    symbolSize: 14,
+                    symbolStroke: "#666666",
+                    symbolStrokeWidth: 3,
+                    symbolX: 12.5,
+                    symbolY: 10.5,
+                    text: null,
+                    theme:
+                    {
+                        fill: "#ffffff",
+                        padding: 5,
+                        stroke: "none"
+                    },
+                    titleKey: "contextButtonTitle",
+                    verticalAlign: top,
+                    width: 24,
+                    x: -10,
+                    y: 0,
+                }
+            },
+            enabled: true
+        },
+        credits:
+        {
+            enabled: false
+        },
+        navigation:
+        {
+            adaptToUpdatedData: true
+        },
+
+        scrollbar: {
+            enabled: false
+        },
+        stockTools: {
+            gui: {
+                enabled: false
+            }
+        },
+
+        rangeSelector: {
+            buttons: [{
+                type: 'minutes',
+                count: 35,
+                text: 'Default',
+            }],
+            selected: 0
+        },
+        series: [
+            {
+                type: 'line',
+                allowPointSelect: true,
+                id: 'FHR1',
+                name: 'FHR1',
+                color: "#00008b",
+                showInNavigator: true,
+                data: series,
+                crisp: true,
+                dataMax: 200,
+                dataMin: 60,
+             width:1,
+
+
+                marker:
+                {
+                    enabled: false
+                },
+                index: 0,
+
+            },
+            {
+                type: 'line',
+                id: 'FHR2',
+                name: 'FHR2',
+                color: '#800080',
+                showInNavigator: true,
+                data: series1,
+                dataMax: 200,
+                dataMin: 100,
+                width:0.1,
+            },
+
+            {
+
+                type: 'line',
+                id: 'TOCO',
+                name: 'TOCO',
+                showInNavigator: true,
+                data: series2,
+                color: '#000000',
+                yAxis: 1,
+                dataMax: 100,
+                dataMin: 0,
+                 width:1,
+            },
+
+
+
+        ],
+
+        plotOptions:
+        {
+
+        },
+        tooltip: {
+            pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> <br/>',
+            valueDecimals: 1,
+            split: true,
+            lineWidth:1,
+        },
+        xAxis: [{
+
+            gridLineDashStyle: "Solid",
+            tickLength: 10,
+            tickAmount: '10',
+            type: 'datetime',
+            tickPixelInterval: 200,
+            linecap: 'round',
+            lineWidth:1,
+            breaks:
+                [{
+                    breakSize: 60*10*1000,
+                    repeat: 60*10*1000
+                }],
+
+            gridLineColor: "#e6e6e6",
+            tickLength: 5,
+            minorTickLength: 100,
+            maxPadding: 1,
+
+
+
+        }]
+        ,
+        yAxis: [{
+
+            labels: {
+                align: 'left',
+                left: '10'
+
+            },
+            height: '60%',
+            offset: 3,
+
+        }, {
+            labels: {
+                align: 'left'
+            },
+            top: '60%',
+            height: '40%',
+            offset: 3,
+
+        }],
+    });
+
+
+
+</script>
+
+
+

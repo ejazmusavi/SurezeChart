@@ -1,0 +1,504 @@
+﻿<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="~/microsoft/signalr/dist/webworker/signalr.min.js"></script>
+
+<style>
+    /* FULL SCREEN */
+
+    .chart:-webkit-full-screen {
+        width: 100%;
+        height: 100%;
+    }
+
+    .chart:-moz-full-screen {
+        width: 100%;
+        height: 100%;
+    }
+
+    .chart:-ms-fullscreen {
+        width: 100%;
+        height: 100%;
+    }
+
+    .chart:fullscreen {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* GENERAL */
+
+    .chart {
+        float: left;
+        max-height: 800px;
+        height: 75vh;
+        position: relative;
+        width: 100%;
+    }
+
+    .highcharts-draw-mode {
+        cursor: crosshair;
+    }
+
+    .left {
+        float: left;
+    }
+
+    .right,
+    .highcharts-stocktools-toolbar li.right {
+        float: right;
+    }
+
+    /* GUI */
+
+    .highcharts-stocktools-toolbar {
+        margin: 0px 0px 0px 10px;
+        padding: 0px;
+        width: calc(100% - 63px);
+        margin-top: unset;
+    }
+
+        .highcharts-stocktools-toolbar li {
+            background-color: #f7f7f7;
+            background-repeat: no-repeat;
+            cursor: pointer;
+            float: left;
+            height: 40px;
+            list-style: none;
+            margin-right: 2px;
+            margin-bottom: 3px;
+            padding: 0px;
+            position: relative;
+            width: auto;
+        }
+
+            .highcharts-stocktools-toolbar li ul {
+                display: none;
+                left: 0px;
+                padding-left: 0px;
+                position: absolute;
+                z-index: 125;
+            }
+
+            .highcharts-stocktools-toolbar li:hover {
+                background-color: #e6ebf5;
+            }
+
+                .highcharts-stocktools-toolbar li:hover ul {
+                    display: block;
+                }
+
+            .highcharts-stocktools-toolbar li ul li {
+                margin-bottom: 0px;
+                width: 160px;
+            }
+
+            .highcharts-stocktools-toolbar li > span.highcharts-menu-item-btn {
+                background-repeat: no-repeat;
+                background-position: 50% 50%;
+                display: block;
+                float: left;
+                height: 100%;
+                width: 40px;
+            }
+
+            .highcharts-stocktools-toolbar li > .highcharts-menu-item-title {
+                color: #666;
+                line-height: 40px;
+                font-size: 0.876em;
+                padding: 0px 10px 0px 5px;
+            }
+
+    .highcharts-indicators > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/indicators.svg');
+    }
+
+    .highcharts-label-annotation > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/label.svg');
+    }
+
+    .highcharts-circle-annotation > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/circle.svg');
+    }
+
+    .highcharts-rectangle-annotation > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/rectangle.svg');
+    }
+
+    .highcharts-segment > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/segment.svg');
+    }
+
+    .highcharts-arrow-segment > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/arrow-segment.svg');
+    }
+
+    .highcharts-ray > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/ray.svg');
+    }
+
+    .highcharts-arrow-ray > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/arrow-ray.svg');
+    }
+
+    .highcharts-infinity-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/line.svg');
+    }
+
+    .highcharts-arrow-infinity-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/arrow-line.svg');
+    }
+
+    .highcharts-horizontal-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/horizontal-line.svg');
+    }
+
+    .highcharts-vertical-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-line.svg');
+    }
+
+    .highcharts-elliott3 > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/elliott-3.svg');
+    }
+
+    .highcharts-elliott5 > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/elliott-5.svg');
+    }
+
+    .highcharts-crooked3 > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/crooked-3.svg');
+    }
+
+    .highcharts-crooked5 > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/crooked-5.svg');
+    }
+
+    .highcharts-measure-xy > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/measure-xy.svg');
+    }
+
+    .highcharts-measure-x > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/measure-x.svg');
+    }
+
+    .highcharts-measure-y > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/measure-y.svg');
+    }
+
+    .highcharts-fibonacci > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/fibonacci.svg');
+    }
+
+    .highcharts-pitchfork > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/pitchfork.svg');
+    }
+
+    .highcharts-parallel-channel > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/parallel-channel.svg');
+    }
+
+    .highcharts-toggle-annotations > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/annotations-visible.svg');
+    }
+
+    .highcharts-vertical-counter > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-counter.svg');
+    }
+
+    .highcharts-vertical-label > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-label.svg');
+    }
+
+    .highcharts-vertical-arrow > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-arrow.svg');
+    }
+
+    .highcharts-vertical-double-arrow > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/vertical-double-arrow.svg');
+    }
+
+    .highcharts-flag-circlepin > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/flag-elipse.svg');
+    }
+
+    .highcharts-flag-diamondpin > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/flag-diamond.svg');
+    }
+
+    .highcharts-flag-squarepin > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/flag-trapeze.svg');
+    }
+
+    .highcharts-flag-simplepin > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/flag-basic.svg');
+    }
+
+    .highcharts-zoom-xy > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/zoom-xy.svg');
+    }
+
+    .highcharts-zoom-x > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/zoom-x.svg');
+    }
+
+    .highcharts-zoom-y > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/zoom-y.svg');
+    }
+
+    .highcharts-full-screen > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/fullscreen.svg');
+    }
+
+    .highcharts-series-type-ohlc > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/series-ohlc.svg');
+    }
+
+    .highcharts-series-type-line > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/series-line.svg');
+    }
+
+    .highcharts-series-type-candlestick > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/series-candlestick.svg');
+    }
+
+    .highcharts-current-price-indicator > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/current-price-show.svg');
+    }
+
+    .highcharts-save-chart > .highcharts-menu-item-btn {
+        background-image: url('https://code.highcharts.com/gfx/stock-icons/save-chart.svg');
+    }
+
+    li.highcharts-active {
+        background-color: #e6ebf5;
+    }
+
+    /* Popup */
+
+    .chart-wrapper {
+        float: left;
+        position: relative;
+        width: 100%;
+        background: white;
+        padding-top: 10px;
+    }
+
+    /* Responsive design */
+
+    @@media screen and (max-width: 1024px) {
+        .highcharts-stocktools-toolbar li > .highcharts-menu-item-title {
+            display: none;
+        }
+
+        .highcharts-stocktools-toolbar li ul li {
+            width: auto;
+        }
+    }
+</style>
+
+<style>
+
+
+    #container {
+        min-height: 600px;
+        align-items: center;
+        max-width: 700px;
+    }
+</style>
+
+
+<!--------------------------------------------Buttons Start---------------------------------------------------------------->
+<link rel="stylesheet" type="text/css" href="https://code.highcharts.com/css/annotations/popup.css">
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+
+<div class="chart-wrapper">
+    <div class="highcharts-popup highcharts-popup-indicators">
+        <span class="highcharts-close-popup">×</span>
+
+        <button>Add</button>
+    </div>
+
+    <div class="" id="container2"></div>
+
+</div>
+<!---------------------------------------------Buttons End----------------------------------------------------------------->
+
+
+
+
+
+<script>
+
+
+
+    var series;
+    var series1;
+    var series2;
+
+    var lasttime;
+
+    var connection = new signalR.HubConnectionBuilder().withUrl("/ChartHub").build();
+    connection.start().then(function () {
+        connection.invoke("InitialData");
+
+    }).catch(function (err) {
+        return console.error('signalR core connection error', err.toString());
+    });
+
+    connection.on('initialChartData', function (data) {
+
+        $.each(data, function (i, v, a) {
+
+            var x = (new Date(v.date)).getTime();; // current time
+            series.addPoint([x, v.fhR1], false, false);
+            series1.addPoint([x, v.fhR2], false, false);
+            series2.addPoint([x, v.toco], false, false);
+
+        });
+
+        data_chart.redraw();
+        setInterval(function () {
+            connection.invoke("GetData");
+        }, 3000);
+    });
+    connection.on('updatechart', function (data) {
+        $.each(data, function (i, v, a) {
+            var x = (new Date(v.date)).getTime();; // current time
+             series.addPoint([x, v.fhR1], false, false);
+            series1.addPoint([x, v.fhR2], false, false);
+            series2.addPoint([x, v.toco], false, false);
+        });
+        data_chart.redraw();
+    })
+
+    var data_chart = Highcharts.chart('container2', {
+        chart: {
+            events: {
+                load: function () {
+                    series = this.series[0];
+                    series1 = this.series[1];
+                    series2 = this.series[2];
+                }
+            },
+            zoomType: 'x'
+        },
+        title: {
+            text: 'USD to EUR exchange rate over time'
+        },
+        subtitle: {
+            text: document.ontouchstart === undefined ?
+                'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
+        },
+        xAxis: {
+            type: 'datetime',
+            tickInterval: 10*60 * 1000,
+            labels: {
+                formatter: function () {
+                    //var pt = a.axis.series[0].points[0];
+                    //console.log('lbl',pt.options);
+                    //var t = point.x;
+                    //console.log(t);
+                    return Highcharts.dateFormat('%b/%e/%Y %H:%M:%S %P', this.value);
+                }
+            },
+            gridLineWidth: 1,
+            height:'55%'
+        },
+        navigator: {
+            enabled: true,
+            liveRedraw: true,
+            series: {
+                type: 'area',
+                pointPlacement: 0.5,
+                pointPadding: 0.25
+            },
+            yAxis: {
+                min: 0,
+                max: 3,
+                reversed: true,
+                categories: []
+            }
+        },
+        legend: {
+            enabled: false
+        },
+        plotOptions: {
+            area: {
+                fillColor: {
+                    linearGradient: {
+                        x1: 0,
+                        y1: 0,
+                        x2: 0,
+                        y2: 0
+                    },
+                    stops: [
+                        [0, Highcharts.getOptions().colors[0]],
+                        [1, Highcharts.color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                    ]
+                },
+                marker: {
+                    radius: 2
+                },
+                lineWidth: 1,
+                states: {
+                    hover: {
+                        lineWidth: 1
+                    }
+                },
+                threshold: null
+            }
+        },
+
+        series: [{
+            type: 'area',
+            name: 'FHR1',
+            data: series,
+            color:'red'
+        }, {
+            type: 'area',
+            name: 'FHR2',
+            data: series1
+        }, {
+            type: 'area',
+            name: 'TOCO',
+            data: series2,
+            width: 1,
+            yAxis: 1
+            }],
+        yAxis: [{
+            enabled:false,
+            title: {
+                text: ''
+            },
+            labels: {
+                align: 'left'
+            },
+            height: '55%',
+            offset: -15,
+            gridLineWidth: 1,
+            gridLineColor: '#197F07'
+
+        }, {
+                enabled: false,
+            title: {
+                text: ''
+            },
+            labels: {
+                align: 'left'
+            },
+            top: '70%',
+            height: '30%',
+            offset: -15,
+            min: 10,
+            max:50
+
+        }]
+    });
+</script>
+
+
+

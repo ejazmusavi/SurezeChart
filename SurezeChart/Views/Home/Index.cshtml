@@ -80,6 +80,13 @@
                     series = this.series[0];
                     series1 = this.series[1];
                     series2 = this.series[2];
+                    let lastValue = this.yAxis[0].dataMax
+                    this.yAxis[0].update({
+                        tickPositions: [60, 80, 100, 120, 140, 160, 180, 200]
+                    });
+                    this.yAxis[1].update({
+                        tickPositions: [0, 20, 40, 60, 80, 100]
+                    });
                 }
             },
             zoomType: 'x'
@@ -104,7 +111,8 @@
             },
             gridLineWidth: 1,
             height: '60%',
-            range:35*60*1000
+            range: 35 * 60 * 1000,
+            minorTickInterval: 10
         },
             {
                 type: 'datetime',
@@ -119,7 +127,8 @@
                     }
                 },
                 gridLineWidth: 1,
-                range: 35 * 60 * 1000
+                range: 35 * 60 * 1000,
+                minorTickInterval: 10
             }],
         legend: {
             enabled: false
@@ -168,7 +177,7 @@
             type: 'area',
             name: 'FHR2',
                 data: series1,
-                showInNavigator: true, gapSize: 5,
+                showInNavigator: true, 
             },
             {
             type: 'area',
@@ -177,29 +186,42 @@
             width: 1,
                 yAxis: 1,
                 xAxis:1,
-                showInNavigator: true, gapSize: 5,
+                showInNavigator: true, 
         }],
         yAxis: [{
-            enabled: false,
             title: {
                 text: ''
             },
             labels: {
-                align: 'left'
+                align: 'right',
+                x:15
             },
+            tickAmount:25,
             height: '60%',
-            gridLineWidth: 1,
+            min: 50,
+            max: 210,
+            showLastLabel: true,
+            endOnTick: false,
+            alignTicks: false,
+            opposite: false
 
-        }, {
-            enabled: false,
+        },
+            {
             title: {
                 text: ''
-            },
+                },
+                tickAmount: 25,
             labels: {
-                align: 'left'
+                align: 'left',x:5
             },
             top: '70%',
-            height: '30%'
+            height: '30%',
+            min: 0,
+                max: 100,
+                showLastLabel: true,
+            endOnTick: false,
+            alignTicks: false,
+            opposite: false
 
         }]
     });

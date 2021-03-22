@@ -53,6 +53,20 @@ namespace SurezeChart.Hubs
                     ctg.Insert(i, data);
                     goto LoopAgain;
                 }
+                else
+                {
+                    var fhr1Diff = ctg[i].FHR1 - ctg[i - 1].FHR1;
+                    if (fhr1Diff > 15)
+                    {
+                        ctg[i].FHR1 = null;
+                    }
+
+                    var fhr2Diff = ctg[i].FHR2 - ctg[i - 1].FHR2;
+                    if (fhr2Diff > 15)
+                    {
+                        ctg[i].FHR2 = null;
+                    }
+                }
             }
 
             var t = ctg.Where(w => w.Date == lasttime).FirstOrDefault();
@@ -95,6 +109,22 @@ namespace SurezeChart.Hubs
                     data.Notes = null;
                     ctg.Insert(i, data);
                     goto LoopAgain;
+                }
+                else
+                {
+                    var fhr1Diff = ctg[i].FHR1 - ctg[i - 1].FHR1;
+
+                    if(fhr1Diff>15 || fhr1Diff<-15 || ctg[i].FHR1 == 0)
+                    {
+                        ctg[i].FHR1 = null;
+                    }
+
+                    var fhr2Diff = ctg[i].FHR2 - ctg[i - 1].FHR2;
+
+                    if (fhr2Diff > 15 || fhr2Diff < -15 || ctg[i].FHR2 == 0)
+                    {
+                        ctg[i].FHR2 = null;
+                    }
                 }
             }
             var lasttime = LastTime.Where(w => w.StripId == 58).FirstOrDefault();

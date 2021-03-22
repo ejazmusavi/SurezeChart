@@ -57,7 +57,6 @@
             series2.addPoint([x, v.toco], false, false);
 
         });
-
         data_chart.redraw();
         setInterval(function () {
             connection.invoke("GetData");
@@ -115,20 +114,20 @@
             minorTickInterval: 10
         },
             {
-                type: 'datetime',
-                tickInterval: 10 * 60 * 1000,
-                labels: {
-                    formatter: function () {
-                        //var pt = a.axis.series[0].points[0];
-                        //console.log('lbl',pt.options);
-                        //var t = point.x;
-                        //console.log(t);
-                        return Highcharts.dateFormat('%b/%e/%Y %H:%M:%S %P', this.value);
-                    }
-                },
-                gridLineWidth: 1,
-                range: 35 * 60 * 1000,
-                minorTickInterval: 10
+            type: 'datetime',
+            tickInterval: 10 * 60 * 1000,
+            labels: {
+                formatter: function () {
+                    //var pt = a.axis.series[0].points[0];
+                    //console.log('lbl',pt.options);
+                    //var t = point.x;
+                    //console.log(t);
+                    return Highcharts.dateFormat('%b/%e/%Y %H:%M:%S %P', this.value);
+                }
+            },
+            gridLineWidth: 1,
+            range: 35 * 60 * 1000,
+            minorTickInterval: 10
             }],
         legend: {
             enabled: false

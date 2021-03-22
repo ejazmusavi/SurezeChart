@@ -110,8 +110,7 @@
             },
             gridLineWidth: 1,
             height: '60%',
-            range: 35 * 60 * 1000,
-            minorTickInterval: 10
+            range: 35 * 60 * 1000
         },
             {
             type: 'datetime',
@@ -126,8 +125,7 @@
                 }
             },
             gridLineWidth: 1,
-            range: 35 * 60 * 1000,
-            minorTickInterval: 10
+            range: 35 * 60 * 1000
             }],
         legend: {
             enabled: false
@@ -202,7 +200,8 @@
             showLastLabel: true,
             endOnTick: false,
             alignTicks: false,
-            opposite: false
+            opposite: false,
+            minorTickInterval: 10
 
         },
             {
@@ -220,7 +219,8 @@
                 showLastLabel: true,
             endOnTick: false,
             alignTicks: false,
-            opposite: false
+                opposite: false,
+                minorTickInterval: 10
 
         }]
     });

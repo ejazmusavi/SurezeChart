@@ -23,7 +23,7 @@ namespace SurezeChart.Controllers
         }
         public JsonResult index3()
         {
-            var ctg = _context.StripData.AsNoTracking().Where(w => w.StripId == 58).
+            var ctg = _context.StripData.AsNoTracking().Where(w => w.StripId == 59).
                 Select(s => new ChartUpdateData { FHR1 = s.FHR1, FHR2 = s.FHR2, TOCO = s.TOCO1, Date = s.CreatedDt.Value }).
                 OrderBy(o => o.Date).Take(2000).ToList();
             for (int i = 0; i < ctg.Count(); i++)

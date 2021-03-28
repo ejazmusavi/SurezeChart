@@ -92,18 +92,18 @@
         },
         navigator: {
             handles: {
-                enabled:false
+                enabled: false
             }
         },
         title: {
             text: 'Central Monitoring Chart'
         },
         subtitle: {
-            text: 'Patient Name: ABC      Age: 35Yrs' 
+            text: 'Patient Name: ABC      Age: 35Yrs'
         },
         xAxis: [{
             type: 'datetime',
-            tickInterval: 10 * 60 * 1000,
+            tickInterval: 1 * 30 * 1000,
             labels: {
                 formatter: function () {
                     //var pt = a.axis.series[0].points[0];
@@ -111,15 +111,17 @@
                     //var t = point.x;
                     //console.log(t);
                     return Highcharts.dateFormat('%b/%e/%Y %H:%M:%S %P', this.value);
-                }
+                },
+                step: 20
             },
             gridLineWidth: 1,
             height: '60%',
             range: 35 * 60 * 1000
-        },
-            {
+        }
+            ,
+        {
             type: 'datetime',
-            tickInterval: 10 * 60 * 1000,
+            tickInterval: 1 * 30 * 1000,
             labels: {
                 formatter: function () {
                     //var pt = a.axis.series[0].points[0];
@@ -127,11 +129,13 @@
                     //var t = point.x;
                     //console.log(t);
                     return Highcharts.dateFormat('%b/%e/%Y %H:%M:%S %P', this.value);
-                }
+                },
+                step: 20
             },
-            gridLineWidth: 1,
+            gridLineWidth: 0,
             range: 35 * 60 * 1000
-            }],
+        }
+        ],
         legend: {
             enabled: false
         },
@@ -168,66 +172,64 @@
         },
         series: [
             {
-            type: 'area',
-            name: 'FHR1',
-            data: series,
-            color: 'red',
-            showInNavigator: true,
-            gapSize: 5,
+                type: 'area',
+                name: 'FHR1',
+                data: series,
+                color: 'red',
+                showInNavigator: true,
             },
             {
-            type: 'area',
-            name: 'FHR2',
+                type: 'area',
+                name: 'FHR2',
                 data: series1,
-                showInNavigator: true, 
+                showInNavigator: true,
             },
             {
-            type: 'area',
-            name: 'TOCO',
-            data: series2,
-            width: 1,
+                type: 'area',
+                name: 'TOCO',
+                data: series2,
                 yAxis: 1,
-                xAxis:1,
-                showInNavigator: true, 
-        }],
-        yAxis: [{
-            title: {
-                text: ''
-            },
-            labels: {
-                align: 'right',
-                x:15
-            },
-            tickAmount:25,
-            height: '60%',
-            min: 50,
-            max: 210,
-            showLastLabel: true,
-            endOnTick: false,
-            alignTicks: false,
-            opposite: false,
-            minorTickInterval: 10
-
-        },
+                showInNavigator: true,
+            }],
+        yAxis: [
             {
-            title: {
-                text: ''
+                title: {
+                    text: ''
+                },
+                labels: {
+                    align: 'right',
+                    x: 15
                 },
                 tickAmount: 25,
-            labels: {
-                align: 'left',x:5
-            },
-            top: '70%',
-            height: '30%',
-            min: 0,
-                max: 100,
+                height: '60%',
+                min: 50,
+                max: 210,
                 showLastLabel: true,
-            endOnTick: false,
-            alignTicks: false,
+                endOnTick: false,
+                alignTicks: false,
                 opposite: false,
                 minorTickInterval: 10
 
-        }]
+            },
+            {
+                title: {
+                    text: ''
+                },
+                tickAmount: 25,
+                labels: {
+                    align: 'left', x: 5
+                },
+                top: '70%',
+                height: '30%',
+                min: 0,
+                max: 100,
+                showLastLabel: true,
+                endOnTick: false,
+                alignTicks: false,
+                opposite: false,
+                minorTickInterval: 10
+            }
+        ]
     });
 </script>
 

@@ -25,13 +25,13 @@ namespace SurezeChart.Hubs
             _context = context;
          
         }
-
+        private readonly int stripid = 59;
         static int index = 0;
         public void GetData()
         {
-            var lasttime = LastTime.Where(w => w.StripId == 58).Select(s=>s.LastTime).FirstOrDefault();
+            var lasttime = LastTime.Where(w => w.StripId == stripid).Select(s=>s.LastTime).FirstOrDefault();
             var ctg = _context.StripData.AsNoTracking().
-                Where(w => w.StripId == 58 & w.CreatedDt >= lasttime).
+                Where(w => w.StripId == stripid & w.CreatedDt >= lasttime).
                 OrderBy(o => o.CreatedDt).Take(2).
                 Select(s => new ChartUpdateData { FHR1 = s.FHR1, FHR2 = s.FHR2, TOCO = s.TOCO1, Date = s.CreatedDt.Value }).ToList();
 
@@ -76,13 +76,13 @@ namespace SurezeChart.Hubs
             {
                 ctg.Remove(t);
             }
-            var lasttime1 = LastTime.Where(w => w.StripId == 58).FirstOrDefault();
+            var lasttime1 = LastTime.Where(w => w.StripId == stripid).FirstOrDefault();
             if (lasttime1 != null)
                 LastTime.Remove(lasttime1);
 
             ctg = ctg.OrderBy(d => d.Date).ToList();
-
-            LastTime.Add(new ChartTime { StripId = 58, LastTime = ctg.Max(s => s.Date)});
+            if(ctg.Count>0)
+            LastTime.Add(new ChartTime { StripId = stripid, LastTime = ctg.Max(s => s.Date)});
 
             Clients.All.SendAsync("updatechart", ctg);
         }
@@ -90,7 +90,7 @@ namespace SurezeChart.Hubs
 
         public void InitialData()
         {
-            var ctg = _context.StripData.AsNoTracking().Where(w => w.StripId == 58).
+            var ctg = _context.StripData.AsNoTracking().Where(w => w.StripId == stripid).
                 Select(s => new ChartUpdateData { FHR1 = s.FHR1, FHR2 = s.FHR2, TOCO = s.TOCO1, Date = s.CreatedDt.Value }).
                 OrderBy(o => o.Date).Take(2000).ToList();
             index = ctg.Count;
@@ -129,13 +129,13 @@ namespace SurezeChart.Hubs
                     }
                 }
             }
-            var lasttime = LastTime.Where(w => w.StripId == 58).FirstOrDefault();
+            var lasttime = LastTime.Where(w => w.StripId == stripid).FirstOrDefault();
             if (lasttime != null)
                 LastTime.Remove(lasttime);
 
             ctg = ctg.OrderBy(d => d.Date).ToList();
-
-            LastTime.Add(new ChartTime { StripId = 58, LastTime = ctg.Max(s => s.Date) });
+            if(ctg.Count>0)
+            LastTime.Add(new ChartTime { StripId = stripid, LastTime = ctg.Max(s => s.Date) });
             Clients.Caller.SendAsync("initialChartData", ctg );
         }
 

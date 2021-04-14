@@ -34,44 +34,71 @@
 <!---------------------------------------------Buttons End----------------------------------------------------------------->
 
 <script>
+    var stripid = 59;
     var series;
     var series1;
     var series2;
+    var conId = '@Guid.NewGuid().ToString()'
+    var connection = new signalR.HubConnectionBuilder().withUrl("/ChartHub").configureLogging(signalR.LogLevel.Information).build();
 
-    var lasttime;
+    var lastdatetime;
 
-    var connection = new signalR.HubConnectionBuilder().withUrl("/ChartHub").build();
-    connection.start().then(function () {
-        connection.invoke("InitialData");
+    var interval;
+    var dataInterval;
+    function startCon() {
+        connection.start().then(function () {
+            connection.invoke("InitialData", stripid, conId);
+        }).catch(function (err) {
+            return console.error('signalR core connection error', err.toString());
+        });
+    }
+    function reconnect() {
+        connection.start().then(function () {
+            clearInterval(interval);
+            dataInterval = setInterval(function () {
+                if (connection.connectionState == "Connected") {//connectionState: "Connected"
+                    connection.invoke("GetData", stripid, conId);
+                }
+            }, 1000);
 
-    }).catch(function (err) {
-        return console.error('signalR core connection error', err.toString());
-    });
+        }).catch(function (err) {
+            return console.error('signalR core connection error', err.toString());
+        });
+    }
+    startCon();
+
+    connection.onclose(function () {
+        clearInterval(dataInterval);
+        interval = setInterval(reconnect(), 1000);
+    })
 
     connection.on('initialChartData', function (data) {
         $.each(data, function (i, v, a) {
-
-            var x = (new Date(v.date)).getTime();; // current time
-            series.addPoint([x, v.fhR1], false, false);
-            series1.addPoint([x, v.fhR2], false, false);
-            series2.addPoint([x, v.toco], false, false);
-
+            var x = (new Date(v.date)).getTime();
+            series.addPoint([x, v.fhR1], false);
+            series1.addPoint([x, v.fhR2], false);
+            series2.addPoint([x, v.toco], false);
         });
         data_chart.redraw();
-        setInterval(function () {
-            connection.invoke("GetData");
+        dataInterval = setInterval(function () {
+            if (connection.connectionState == "Connected") {//connectionState: "Connected"
+
+                connection.invoke("GetData", stripid, conId );
+            }
         }, 1000);
     });
     connection.on('updatechart', function (data) {
         $.each(data, function (i, v, a) {
-            var x = (new Date(v.date)).getTime();; // current time
-            series.addPoint([x, v.fhR1], false, false);
-            series1.addPoint([x, v.fhR2], false, false);
-            series2.addPoint([x, v.toco], false, false);
+            var x = (new Date(v.date)).getTime();
+            series.addPoint([x, v.fhR1], false);
+            series1.addPoint([x, v.fhR2], false);
+            series2.addPoint([x, v.toco], false);
         });
         data_chart.redraw();
     })
-
+    connection.on('updatechartError', function (t, e) {
+        console.log(t, e);
+    })
     var data_chart = Highcharts.stockChart('container2', {
         chart: {
             events: {
@@ -79,11 +106,14 @@
                     series = this.series[0];
                     series1 = this.series[1];
                     series2 = this.series[2];
-                    let lastValue = this.yAxis[0].dataMax
+                    //let lastValue = this.yAxis[0].dataMax
                     this.yAxis[0].update({
-                        tickPositions: [60, 80, 100, 120, 140, 160, 180, 200]
+                        tickPositions: [50,60, 80, 100, 120, 140, 160, 180, 200]
                     });
                     this.yAxis[1].update({
+                        tickPositions: [50,60, 80, 100, 120, 140, 160, 180, 200]
+                    });
+                    this.yAxis[2].update({
                         tickPositions: [0, 20, 40, 60, 80, 100]
                     });
                 }
@@ -96,45 +126,52 @@
             }
         },
         title: {
-            text: 'Central Monitoring Chart'
+            text: 'Central Monitoring Chart',
+            style: { 'font-size': '18px' }
         },
         subtitle: {
-            text: 'Patient Name: ABC      Age: 35Yrs'
+            text: 'Patient Name: ABC Xyz &nbsp;&nbsp;    Age: 23Yrs  &nbsp;&nbsp;  Room: RN0001 &nbsp;&nbsp;POA: 16Weeks &nbsp;&nbsp; Admitte Hours: 24Hrs ',
+            style: {'font-size':'16px'}
         },
-        xAxis: [{
+        xAxis: [
+            {
             type: 'datetime',
-            tickInterval: 1 * 30 * 1000,
+            tickInterval: 2 * 30 * 1000,
             labels: {
                 formatter: function () {
-                    //var pt = a.axis.series[0].points[0];
-                    //console.log('lbl',pt.options);
-                    //var t = point.x;
-                    //console.log(t);
-                    return Highcharts.dateFormat('%b/%e/%Y %H:%M:%S %P', this.value);
+                    return Highcharts.dateFormat('%d/%m/%Y %I:%M:%S %P', this.value);
                 },
-                step: 20
-            },
+                step: 10
+                },
+                gridLineColor: '#dba935',
             gridLineWidth: 1,
-            height: '60%',
-            range: 35 * 60 * 1000
-        }
-            ,
-        {
-            type: 'datetime',
-            tickInterval: 1 * 30 * 1000,
-            labels: {
-                formatter: function () {
-                    //var pt = a.axis.series[0].points[0];
-                    //console.log('lbl',pt.options);
-                    //var t = point.x;
-                    //console.log(t);
-                    return Highcharts.dateFormat('%b/%e/%Y %H:%M:%S %P', this.value);
-                },
-                step: 20
+            height: '70%',
+                range: 35 * 60 * 1000,
+                //tickColor: 'green',
+                //tickLength: 10,
+                //tickWidth: 3,
             },
-            gridLineWidth: 0,
-            range: 35 * 60 * 1000
-        }
+            {
+                type: 'datetime',
+                tickInterval: 2 * 30 * 1000,
+                labels: {
+                    formatter: function () {
+                        //var pt = a.axis.series[0].points[0];
+                        //console.log('lbl',pt.options);
+                        //var t = point.x;
+                        //console.log(t);
+                        return '';// Highcharts.dateFormat('%d/%m/%Y %I:%M:%S %P', this.value);
+                    },
+                    step: 10
+                },
+                gridLineColor: '#3ea5ab',
+                gridLineWidth: 1,
+                linkedTo: 0,
+                range: 35 * 60 * 1000,
+                tickWidth: 0,
+                lineWidth:0
+            }
+
         ],
         legend: {
             enabled: false
@@ -168,7 +205,7 @@
         rangeSelector: {
             buttons: [],
             selected: 1,
-            inputEnabled: false
+            //inputEnabled: false
         },
         series: [
             {
@@ -176,58 +213,100 @@
                 name: 'FHR1',
                 data: series,
                 color: 'red',
+                xAxis: 0,
                 showInNavigator: true,
             },
             {
                 type: 'area',
                 name: 'FHR2',
                 data: series1,
+                xAxis: 0,
                 showInNavigator: true,
             },
             {
                 type: 'area',
                 name: 'TOCO',
                 data: series2,
-                yAxis: 1,
+                yAxis: 2,
+                xAxis:1,
                 showInNavigator: true,
             }],
         yAxis: [
             {
+                plotBands: [{ // mark the weekend
+                    color: '#fbfca2',
+                    from: 40,
+                    to: 110
+                }, { // mark the weekend
+                        color: '#fbfca2',
+                        from: 160,
+                        to: 210
+                    }],
                 title: {
                     text: ''
                 },
                 labels: {
+                    formatter: function () {
+                        if (this.value != '50')
+                            return this.value;
+                    },
                     align: 'right',
-                    x: 15
+                    x: 15,
+                    y:4
                 },
                 tickAmount: 25,
-                height: '60%',
+                height: '70%',
                 min: 50,
                 max: 210,
                 showLastLabel: true,
                 endOnTick: false,
                 alignTicks: false,
                 opposite: false,
-                minorTickInterval: 10
+                minorTickInterval: 5,
+                gridLineColor: '#dba935',
+
+            },
+            {
+                title: {
+                    text: ''
+                }, labels: {
+                    y: 4,
+                    formatter: function () {
+                        if (this.value != '50')
+                            return this.value;
+                    },
+                },
+                linkedTo: 0,
+                opposite: true,
+                height: '70%',
+                min: 50,
+                max: 210,
+                showLastLabel: true,
+                endOnTick: false,
+                alignTicks: false,
+                minorTickInterval: 10,
+                gridLineWidth:0
 
             },
             {
                 title: {
                     text: ''
                 },
-                tickAmount: 25,
+                tickAmount: 50,
                 labels: {
-                    align: 'left', x: 5
+                    align: 'left', x: 5,
+                    y: 4
                 },
-                top: '70%',
-                height: '30%',
+                top: '80%',
+                height: '35%',
                 min: 0,
                 max: 100,
                 showLastLabel: true,
                 endOnTick: false,
                 alignTicks: false,
                 opposite: false,
-                minorTickInterval: 10
+                minorTickInterval: 20,
+                gridLineColor: '#3ea5ab',
             }
         ]
     });
